@@ -69,10 +69,14 @@ def get_book_summary(book_url):
     You can easily capture CSS selectors with your browser's inspector window.
     Make sure to strip() any newlines from the book title and number of pages.
     """
-
-    pass
-
-
+    r = requests.get(book_url)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    title = soup.find('h1').text.strip() 
+    authorTag = soup.find('a', class_ = 'authorName')
+    author = authorTag.find('span').text.strip() 
+    pages = soup.find('span', itemprop = 'numberOfPages').text.strip() 
+    tup = (title, author, pages)
+    return tup
 def summarize_best_books(filepath):
     """
     Write a function to get a list of categories, book title and URLs from the "BEST BOOKS OF 2020"
@@ -84,7 +88,31 @@ def summarize_best_books(filepath):
     ("Fiction", "The Testaments (The Handmaid's Tale, #2)", "https://www.goodreads.com/choiceawards/best-fiction-books-2020") 
     to your list of tuples.
     """
-    pass
+    
+    f = open(filepath)
+    html = f.read()
+    f.close()
+    categories = []
+    titles = []
+    urls = []
+    tups = []
+    soup = BeautifulSoup(html, 'html.parser')
+    tags = soup.find_all('div', class_= "category clearFix")
+    for tag in tags:
+        url_tag = tag.find_next('a')
+        url = url_tag.get('href')
+        cat = url_tag.find('h4').text.strip() 
+        urls.append(url)
+        categories.append(cat)
+    title_tags = soup.find_all('img', class_= "category__winnerImage")
+    for tag in title_tags:
+        title = tag.get('alt')
+        titles.append(title)
+    url_tags = soup.find_all('a', class_= "category__copy")
+    
+    for i in range(20):
+        tups.append((categories[i], titles[i], urls[i]))
+    return tups
 
 
 def write_csv(data, filename):
@@ -107,7 +135,14 @@ def write_csv(data, filename):
 
     This function should not return anything.
     """
-    pass
+    out = open(filename, 'w')
+    out.write('Book title,Author Name')
+    out.write('\n')
+    for tup in data:
+        out.write(tup[0] + ',' + tup[1])
+        out.write('\n')
+    out.close()
+    return None
 
 
 def extra_credit(filepath):
@@ -200,6 +235,7 @@ class TestCases(unittest.TestCase):
 
 
 print(get_search_links())
+print(summarize_best_books('/Users/adamdinhofer/Desktop/206/Projects/wn2021-project2-Adam-Din/best_books_2020.htm'))
 if __name__ == '__main__':
     print(extra_credit("extra_credit.htm"))
     unittest.main(verbosity=2)
